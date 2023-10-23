@@ -6,29 +6,30 @@
 # Start from the PyTorch version, which comes with CUDA pre-installed
 FROM pytorch/pytorch:1.10.0-cuda11.3-cudnn8-runtime
 
-# Install other requirements
-RUN pip install certifi==2023.7.22 \
-    charset-normalizer==3.3.0 \
-    dlib==19.24.2 \
-    filelock==3.12.4 \
-    fsspec==2023.10.0 \
-    idna==3.4 \
-    Jinja2==3.1.2 \
-    MarkupSafe==2.1.3 \
-    mpmath==1.3.0 \
-    networkx==3.2 \
-    ninja==1.11.1.1 \
-    numpy==1.26.1 \
-    Pillow==10.1.0 \
-    requests==2.31.0 \
-    scipy==1.11.3 \
-    sympy==1.12 \
-    torchvision==0.16.0 \
-    typing_extensions==4.8.0 \
-    urllib3==2.0.7
+# Install wget, git, cmake, make and compilers
+RUN apt-get update && apt-get install -y wget bzip2 git cmake build-essential
+
+# Copy the environment.yml file
+COPY ./environment/environment.yml /workspace/environment.yml
+
+# Install conda via Miniconda install (adjust version if needed)
+RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh && \
+    sh Miniconda3-latest-Linux-x86_64.sh -b -p /miniconda && \
+    rm Miniconda3-latest-Linux-x86_64.sh
+
+# Adding the miniconda install location to PATH
+ENV PATH /miniconda/bin:$PATH
+
+# Create the environment
+RUN conda env create -f /workspace/environment.yml
+
+# Make RUN commands use the new environment
+SHELL ["conda", "run", "-n", "Barbershop", "/bin/bash", "-c"]
 
 # Copy your scripts into the container
 COPY ./main.py /workspace/main.py
 
 # Set the default command for the container
 CMD ["python", "/workspace/main.py"]
+
+
